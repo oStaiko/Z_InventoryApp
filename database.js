@@ -1,10 +1,11 @@
 const sqlite3 = require('sqlite3').verbose();
+const { writeLog, userInfo } = require('./logger');
 
 const db = new sqlite3.Database('./inventory.db', (err) => {
     if (err)
-        console.error(err);
+        writeLog('ERROR', err);
     else
-        console.log('Connected to database');
+        writeLog('INFO', 'Connected to database');
 });
 
 db.serialize(() => {

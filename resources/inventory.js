@@ -32,37 +32,36 @@ function enableEdit(id, name, quantity, description) {
     document.getElementById('btn-edit').onclick = () => saveEdit(id);
 }
 
-async function saveEdit(id) {
 const sanitize = {
-  name(raw) {
-    return raw
-      .trim()                          // remove leading/trailing whitespace
-      .replace(/\s+/g, ' ')            // collapse multiple spaces to one
-      .replace(/[^a-zA-Z0-9 \-]/g, '') // strip non-alphanumeric, non-space, non-hyphen
-      .slice(0, 20);                   // enforce max length
-  },
+    name(raw) {
+        return raw
+        .trim()                          // remove leading/trailing whitespace
+        .replace(/\s+/g, ' ')            // collapse multiple spaces to one
+        .replace(/[^a-zA-Z0-9 \-]/g, '') // strip non-alphanumeric, non-space, non-hyphen
+        .slice(0, 20);                   // enforce max length
+    },
 
-  quantity(raw) {
-    const n = Math.trunc(Number(raw)); // parse and drop any decimal
-    if (Number.isFinite(n)) return n; else return 0; // guard against NaN / Infinity
-  },
+    quantity(raw) {
+        const n = Math.trunc(Number(raw)); // parse and drop any decimal
+        if (Number.isFinite(n)) return n; else return 0; // guard against NaN / Infinity
+    },
 
-  description(raw) {
-    return raw
-      .replace(/"/g, "'")              // swap double quotes for single quotes
-      .replace(/['\\;%\-\-]/g, c =>    // escape SQL-risky characters
-        ({ "'": "''", '\\': '\\\\', ';': '', '%': '' }[c] ?? c))
-      .slice(0, 500);                  // enforce max length
-  },
+    description(raw) {
+        return raw
+        .replace(/"/g, "'")              // swap double quotes for single quotes
+        .replace(/['\\;%\-\-]/g, c =>    // escape SQL-risky characters
+            ({ "'": "''", '\\': '\\\\', ';': '', '%': '' }[c] ?? c))
+        .slice(0, 500);                  // enforce max length
+    },
 };
 
-const payload = {
-  name:        sanitize.name(document.getElementById('edit-name').value),
-  quantity:    sanitize.quantity(document.getElementById('edit-quantity').value),
-  description: sanitize.description(document.getElementById('edit-description').value),
-};
+async function saveEdit(id) {
 
-
+    const payload = {
+        name:        sanitize.name(document.getElementById('edit-name').value),
+        quantity:    sanitize.quantity(document.getElementById('edit-quantity').value),
+        description: sanitize.description(document.getElementById('edit-description').value),
+    };
 
     try {
         console.log('Attempting to patch '+ id)
@@ -109,9 +108,9 @@ function createItem() {
 
 async function saveNewItem() {
     const payload = {
-        name:        document.getElementById('create-name').value,
-        quantity:    document.getElementById('create-quantity').value,
-        description: document.getElementById('create-description').value,
+        name:        sanitize.name(document.getElementById('create-name').value),
+        quantity:    sanitize.quantity(document.getElementById('create-quantity').value),
+        description: sanitize.description(document.getElementById('create-description').value),
     };
     
     if (payload.name=="")

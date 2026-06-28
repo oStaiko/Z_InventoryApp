@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../../database');
+const { writeLog, userInfo } = require('../../logger');
 
 
 module.exports = function(passport) {
@@ -19,11 +20,14 @@ module.exports = function(passport) {
             [req.params.id],
             (err, row) => {
                 if (err)
-                    res.status(500).json(err);
+                    res.status(500).send(err.message);
                 else if (!row)
                     res.sendStatus(404);
                 else if (row.owner_id != req.session.passport.user)
-                    res.sendStatus(403);
+                {
+                    writeLog('WARNING', `Attempt made to modify un-owned item   by ${userInfo(req)}`)
+                    res.status(403).send("You do not have permissions to modify this resource");
+                }
                 else
                     next();
             }
@@ -34,6 +38,7 @@ module.exports = function(passport) {
     // Returns all items
     router.get('/', (req, res) => {
 
+        writeLog('INFO', `GET /api/items/   by ${userInfo(req)}`);
         db.all(
             `
             SELECT
@@ -49,7 +54,10 @@ module.exports = function(passport) {
             [],
             (err, rows) => {
                 if (err)
-                    res.status(500).json(err);
+                {
+                    writeLog('ERROR', `DB Error: ${err.message}`);
+                    res.status(500).send(err.message);
+                }
                 else
                     res.json(rows);
             }
@@ -60,7 +68,7 @@ module.exports = function(passport) {
     // Returns all information on one item
     router.get('/:id', (req, res) => {
 
-        console.log("GET /api/items/"+req.params.id)
+        writeLog('INFO', `GET /api/items/${req.params.id}   by ${userInfo(req)}`);
         db.get(
             `
             SELECT
@@ -78,9 +86,15 @@ module.exports = function(passport) {
             [req.params.id],
             (err, row) => {
                 if (err)
-                    res.status(500).json(err);
+                {
+                    writeLog('ERROR', `DB Error: ${err.message}`);
+                    res.status(500).send(err.message);
+                }
                 else if (!row)
+                {
+                    writeLog('WARNING',`Requested item does not exist.`)
                     res.sendStatus(404);
+                }
                 else
                     res.json(row);
             }
@@ -91,8 +105,8 @@ module.exports = function(passport) {
     // Creates a new item belonging to the current logged-in user
     router.post('/', requireLogin, (req, res) => {
 
-        console.log("POST /api/items/")
         const { name, description, quantity } = req.body;
+        writeLog('INFO', `POST /api/items/   for ${quantity} of item: ${name} (${description.slice(0, 20)})   by ${userInfo(req)}`);
 
         db.run(
             `
@@ -113,7 +127,10 @@ module.exports = function(passport) {
             ],
             (err) => {
                 if (err)
-                    res.status(400).json({ error: err.message });
+                {
+                    writeLog('ERROR', `DB Error: ${err.message}`);
+                    res.status(500).send(err.message);
+                }
                 else
                     res.status(201).json({ id: this.lastID });
             }
@@ -123,7 +140,7 @@ module.exports = function(passport) {
     // PATCH /api/items/:id
     // Updates an item belonging to the current logged-in user
     router.patch('/:id', requireLogin, requireOwnership, (req, res) => {
-        console.log("PATCH /api/items/"+req.params.id)
+        writeLog('INFO', `PATCH /api/items/${req.params.id}   by ${userInfo(req)}`);
         const fields = [];
         const values = [];
 
@@ -154,11 +171,20 @@ module.exports = function(passport) {
             values,
             function(err) {
                 if (err)
-                    return res.status(500).json(err);
+                {
+                    writeLog('ERROR', `DB Error: ${err.message}`);
+                    res.status(500).send(err.message);
+                }
                 else if (this.changes === 0)
-                    return res.sendStatus(404);
+                {
+                    writeLog('WARNING',`Requested item does not exist.`)
+                    res.sendStatus(404);
+                }
                 else
+                {
+                    writeLog('INFO',`Item ID: ${req.params.id} patched`)
                     res.sendStatus(204);
+                }
             }
         );
     });
@@ -167,35 +193,29 @@ module.exports = function(passport) {
     // Deletes an item belonging to the current logged-in user
     router.delete('/:id', /*requireLogin, requireOwnership,*/ (req, res) => {
 
-        console.log("DELETE /api/items/"+req.params.id)
+        writeLog('INFO', `DELETE /api/items/${req.params.id}   by ${userInfo(req)}`);
         db.run(
             `DELETE FROM items WHERE id = ?`,
             [req.params.id],
             (err) => {
-
                 if (err)
-                    return res.status(500).json(err);
+                {
+                    writeLog('ERROR', `DB Error: ${err.message}`);
+                    res.status(500).send(err.message);
+                }
                 else if (this.changes === 0)
-                    return res.sendStatus(404);
+                {
+                    writeLog('WARNING',`Requested item does not exist.`)
+                    res.sendStatus(404);
+                }
                 else
+                {
+                    writeLog('INFO',`Item ID: ${req.params.id} deleted`)
                     res.sendStatus(204);
+                }
             }
         );
     });
 
     return router;
 }
-
-/*
-CREATE TABLE items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    description TEXT,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    owner_id INTEGER NOT NULL,
-
-    FOREIGN KEY (owner_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE
-);
-*/

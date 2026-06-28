@@ -6,10 +6,11 @@ const fs = require('fs');
 const https = require('https');
 const helmet = require('helmet');
 const bcrypt = require('bcrypt');
+const { writeLog, userInfo } = require('./logger');
 require('./passport-config')(passport);
 
 
-HOST = "18.221.214.171"
+HOST = "localhost"//"18.221.214.171"
 PORT = 80
 
 
@@ -72,9 +73,11 @@ app.use('/api/*splat',(req,res)=>{
 
 // For all other requests, show 404 page
 app.use('/*splat', (req, res, next)=>{
-    console.log("Showing 404 page for path: " + req.originalUrl);
+    writeLog('INFO', `Showing 404 page for path: ${req.originalUrl}`);
     res.render('error', {path:"Error"});
 });
+
+writeLog('INFO', `Starting server on ${HOST}:${PORT} ==========================================================`);
 
 // Start listening on port
 app.listen(PORT);

@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const db = require('../../database');
+const { writeLog, userInfo } = require('../../logger');
 
 module.exports = function(passport) {
     const router = express.Router();
@@ -19,11 +20,11 @@ module.exports = function(passport) {
             [req.params.id],
             (err, row) => {
                 if (err)
-                    res.status(500).json(err);
+                    res.status(500).send(err.message);
                 else if (!row)
                     res.sendStatus(404);
                 else if (row.owner_id != req.session.passport.user)
-                    res.sendStatus(403);
+                    res.status(403).send("You do not have permissions to modify this resource");
                 else
                     next();
             }
@@ -33,14 +34,14 @@ module.exports = function(passport) {
     // GET /api/users
     // Returns JSON for all IDs and Usernames
     router.get('/', (req, res) => {
-        console.log("GET /users/");
+        writeLog('INFO', `GET /api/users/   by ${userInfo(req)}`);
         db.all(
             `SELECT id, username FROM users`,
             [],
             (err, rows) => {
 
                 if (err)
-                    return res.status(500).json(err);
+                    return res.status(500).send(err.message);
                 else
                     res.json(rows);
         });
@@ -49,7 +50,7 @@ module.exports = function(passport) {
     // GET /api/users/:id
     // Returns ID and Username associated with ID
     router.get('/:id', (req, res) => {
-        console.log("GET /users/"+req.params.id);
+        writeLog('INFO', `GET /api/users/${req.params.id}   by ${userInfo(req)}`);
         db.get(
             `
             SELECT
@@ -64,7 +65,7 @@ module.exports = function(passport) {
                 if (err)
                     res.status(500).send(err.message);
                 else if (!row)
-                    res.sendStatus(404);
+                    res.status(404).send("No user exists with that ID");
                 else
                     res.json(row);
         });
@@ -73,7 +74,7 @@ module.exports = function(passport) {
     // GET /api/users/:id/items
     // Returns all items belonging to user
     router.get('/:id/items', (req, res) => {
-        console.log("GET /users/"+req.params.id+"/items");
+        writeLog('INFO', `GET /api/users/${req.params.id}/items   by ${userInfo(req)}`);
         db.all(
             `
             SELECT
@@ -91,7 +92,7 @@ module.exports = function(passport) {
             (err, row) => {
                 if (err)
                 {
-                    console.log("DB ERROR: "+err.message)
+                    writeLog('ERROR', `DB error: ${err.message}`)
                     res.status(500).send(err.message);
                 }
                 else if (!row)
@@ -105,15 +106,24 @@ module.exports = function(passport) {
     // Create a new user
     router.post('/', async (req, res) => {
         const { new_username, new_password } = req.body;
-        console.log("POST /users/");
-        console.log("Attempting to create new user => " + new_username + ' : ' + new_password)
+        writeLog('INFO', `POST /api/users/   by ${userInfo(req)}`);
+        writeLog('INFO', `Attempting to create new user => ${new_username} : ${new_password}`);
         // Input validation
         if (!/^[a-zA-Z0-9_~-]+$/.test(new_username))
+        {
+            writeLog('WARNING', `Username contained illegal characters.`);
             return res.status(400).send("Username contains illegal characters.");
+        }
         else if (/^[A-Za-z\d@$!%*?&].$/.test(new_password))
+        {
+            writeLog('WARNING', `Password contained illegal characters.`);
             return res.status(400).send("Password contains illegal characters.");
+        }
         else if (/^.{4,20}$/.test(new_password))
-            return res.status(400).send("Password must be between 4 and 20 characters.");
+        {
+            writeLog('WARNING', `Password not between 4 and 20 characters.`);
+            return res.status(400).send("Password must be between 4 and 20 characters.")
+        }
         try {
             const passwordHash = await bcrypt.hash(new_password, 10);
             db.run(
@@ -128,18 +138,18 @@ module.exports = function(passport) {
                     {
                         if (err.message == 'SQLITE_CONSTRAINT: UNIQUE constraint failed: users.username')
                         {
-                            console.log("Error creating user: Username '" + new_username + "' already exists.");
+                            writeLog('ERROR', `Username '${new_username}' already exists.`);
                             res.status(400).send("Username already exists.");
                         }
                         else
                         {
-                            console.log("Error creating user: ", err)
+                            writeLog('ERROR', `DB error: ${err.message}`);
                             res.status(400).send(err.message);
                         }
                     }
                     else
                     {
-                        console.log("Created new user: ", new_username)
+                        writeLog('INFO', `Created new user: ${new_username}`);
 
                         // Log in user
                         db.get('SELECT * FROM users WHERE id = ?', [this.lastID], (err, user) => {
@@ -152,7 +162,7 @@ module.exports = function(passport) {
                     }
         });
         } catch {
-            console.log("Generic error creating user: ", new_username);
+            writeLog('ERROR', `Generic error creating user: ${new_username}`);
             res.redirect('/');
         }
     });
@@ -160,30 +170,30 @@ module.exports = function(passport) {
     // DELETE /api/users/:id
     // Deletes the specified user, and all items associated with them
     router.delete('/:id', requireLogin, requireOwnership, (req, res) => {
-        console.log("DELETE /users/"+req.params.id);
+        writeLog('INFO', `DELETE /api/users/${req.params.id}   by ${userInfo(req)}`);
         // Delete User
         db.run(
             `DELETE FROM users WHERE id = ?`,
             [req.params.id],
             function(err) {
-
                 if (err)
+                {
+                    writeLog('ERROR', `DB error: ${err}}`);
                     res.status(500).json(err);
+                }
                 else if (this.changes === 0)
+                {
+                    writeLog('WARNING', `No changes made to DB`);
                     res.sendStatus(404);
+                }
                 else
+                {
+                    writeLog('INFO', `User Deleted: ${req.params.id}}`);
                     res.sendStatus(204);
+                }
         });
     });
 
 
     return router;
 }
-
-/*
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOCASE NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL
-);
-*/

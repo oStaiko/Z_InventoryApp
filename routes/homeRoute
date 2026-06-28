@@ -1,17 +1,31 @@
 const express = require('express');
 
+const { writeLog, userInfo } = require('../logger');
+
 module.exports = function(passport, HOST="localhost", PORT=3000) {
     const router = express.Router();
 
-    router.post('/login', 
-        passport.authenticate('local', {
-            successRedirect: '/inventory',
-            failureRedirect: '/'
-    }))
+    router.post('/login', (req, res, next) => {
+        passport.authenticate('local', (err, user) => {
+            if (err)
+                next(err);
+            else if (!user)
+            {
+                writeLog('WARNING', `Failed login attempt   by ${userInfo(req)}`);
+                res.redirect('/');
+            }
+            else
+                req.logIn(user, (err) => {
+                    if (err) return next(err);
+                    writeLog('INFO', `Signing in ${user.username}   by ${userInfo(req)}`);
+                    return res.redirect('/inventory');
+                });
+        })(req, res, next);
+    });
 
     router.use('/logout',(req,res)=>{
         if (req.user)
-            console.log("Logging out " + req.user.username)
+            writeLog('INFO', `Logging out ${req.user.username}   IP:${req.ip}`)
         req.logout((err) => {
             if (err)
                 next(err);
@@ -20,7 +34,8 @@ module.exports = function(passport, HOST="localhost", PORT=3000) {
         });
     })
 
-    router.get('/admin',(req,res)=>{
+    router.get('/admin',(req,res)=>{ // Discount honeypot
+        writeLog('WARNING', `Atempt made to get /admin by    IP:${req.ip}`)
         res.redirect('google.com/search?q=How+can+I+be+a+more+creative+hacker');
     })
 

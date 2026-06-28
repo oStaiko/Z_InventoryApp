@@ -49,16 +49,18 @@
 
         <!-- Detail Panel -->
         <div class="col-lg-3">
-            <button onclick="createItem()"> Create New Item </button>
-            <div class="card sticky-top">
-                <div class="card-header text-bg-info">
-                    Item Details
-                </div>
+            <div class="d-flex flex-column align-items-center">
+                <button type="button" class="btn btn-primary mb-2" onclick="createItem()"> Create New Item </button>
+                <div class="card sticky-top w-100">
+                    <div class="card-header text-bg-info">
+                        Item Details
+                    </div>
 
-                <div class="card-body" id="detailPanel">
-                    <p class="text-muted">
-                        Click on a card for more information.
-                    </p>
+                    <div class="card-body" id="detailPanel">
+                        <p class="text-muted">
+                            Click on a card for more information.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
