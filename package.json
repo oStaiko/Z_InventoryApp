@@ -7,9 +7,9 @@
   "type": "commonjs",
   "main": "nodeServer.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node --watch nodeServer.js",
-    "prod": "node nodeServer.js"
+    "prod": "node nodeServer.js",
+    "stop": "kill -9 $(lsof -t -i:80)"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

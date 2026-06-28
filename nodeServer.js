@@ -9,8 +9,8 @@ const bcrypt = require('bcrypt');
 require('./passport-config')(passport);
 
 
-HOST = "localhost"
-PORT = 3000
+HOST = "18.221.214.171"
+PORT = 80
 
 
 const app = express();
