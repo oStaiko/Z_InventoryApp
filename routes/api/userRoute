@@ -114,12 +114,17 @@ module.exports = function(passport) {
             writeLog('WARNING', `Username contained illegal characters.`);
             return res.status(400).send("Username contains illegal characters.");
         }
-        else if (/^[A-Za-z\d@$!%*?&].$/.test(new_password))
+        else if (!/^.{3,20}$/.test(new_username))
+        {
+            writeLog('WARNING', `Username not between 3 and 20 characters.`);
+            return res.status(400).send("Username must be between 3 and 20 characters.")
+        }
+        else if (!/^[A-Za-z\d@$!%*?&]+$/.test(new_password))
         {
             writeLog('WARNING', `Password contained illegal characters.`);
             return res.status(400).send("Password contains illegal characters.");
         }
-        else if (/^.{4,20}$/.test(new_password))
+        else if (!/^.{4,20}$/.test(new_password))
         {
             writeLog('WARNING', `Password not between 4 and 20 characters.`);
             return res.status(400).send("Password must be between 4 and 20 characters.")

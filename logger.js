@@ -8,12 +8,12 @@ function userInfo (req)
     {
         if (Object.hasOwn(req, "session"))
         {  
-            if (req.ip == "::1")
-                return req.ip + ` (Local Request)`
+            if (req.ip == "::1" || req.ip == "::ffff:127.0.0.1")
+                return req.ip + ` (Server Request)`
             if (Object.hasOwn(req.session, "passport") && Object.hasOwn(req.session.passport, "user"))
                 return req.ip + ` (UID: ${req.session.passport.user})`
             else
-                return req.ip + ' (Error with passport)'
+                return req.ip + ' (Guest)'
         }
         else
             return req.ip + ' (Unable to grab session)'
