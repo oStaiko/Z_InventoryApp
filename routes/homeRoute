@@ -1,6 +1,6 @@
 const express = require('express');
 
-module.exports = function(passport) {
+module.exports = function(passport, HOST="localhost", PORT=3000) {
     const router = express.Router();
 
     router.post('/login', 
@@ -33,7 +33,7 @@ module.exports = function(passport) {
     })
 
     router.get('/directory', async (req, res)=>{
-        const response = await fetch("http://localhost:8080/api/items");
+        const response = await fetch("http://"+serverIP+":"+port+"/api/items");
         const data = await response.json();
         data.sort((a, b) => a.id - b.id);
         res.render('directory', {path:"directory", data: data});
@@ -42,7 +42,7 @@ module.exports = function(passport) {
     router.get('/inventory', async (req, res)=>{
         if (!req.isAuthenticated())
             return res.redirect('/directory');
-        const response = await fetch("http://localhost:8080/api/users/"+req.session.passport.user+"/items");
+        const response = await fetch("http://"+serverIP+":"+port+"/api/users/"+req.session.passport.user+"/items");
         const data = await response.json();
         //data.sort((a, b) => a.id - b.id);
         res.render('inventory', {path:"inventory", data: data});

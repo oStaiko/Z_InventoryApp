@@ -8,6 +8,11 @@ const helmet = require('helmet');
 const bcrypt = require('bcrypt');
 require('./passport-config')(passport);
 
+
+HOST = "localhost"
+PORT = 3000
+
+
 const app = express();
 
 // Apply Helmet security settings
@@ -56,7 +61,7 @@ app.use('/',(req,res,next)=>{
 
 
 // Mount routers
-app.use('/', require('./routes/homeRoute')(passport));
+app.use('/', require('./routes/homeRoute')(passport, HOST, PORT));
 app.use('/api/users', require('./routes/api/userRoute')(passport));
 app.use('/api/items', require('./routes/api/itemRoute')(passport));
 
@@ -72,22 +77,4 @@ app.use('/*splat', (req, res, next)=>{
 });
 
 // Start listening on port
-app.listen(8080);
-
-
-
-/*const data = {
-    name: 'Liquid Rocket Fuel',
-    description: 'Hydraine (Liters)',
-    quantity: 1200
-};
-
-fetch("http://localhost:8080/api/items", {
-    method: 'POST', // Specify the HTTP method
-    headers: {
-    'Content-Type': 'application/json' // Tell the server we are sending JSON
-    },
-    body: JSON.stringify(data) // Convert JavaScript object to a string
-});*/
-
-//fetch("http://localhost:8080/api/items/2", {method: 'DELETE'})
+app.listen(PORT);
