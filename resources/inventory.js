@@ -22,22 +22,47 @@ function showDetails(card) {
 
 function enableEdit(id, name, quantity, description) {
     document.querySelector('#detail-name').innerHTML =
-        `<input id="edit-name" value="${name}" />`;
+        `<input id="edit-name" value="${name}" maxlength="20"/>`;
     document.querySelector('#detail-quantity').innerHTML =
-        `<input id="edit-quantity" type="number" value="${quantity}" />`;
+        `<input id="edit-quantity" type="number" value="${quantity}" maxlength="10"/>`;
     document.querySelector('#detail-description').innerHTML =
-        `<textarea id="edit-description">${description}</textarea>`;
+        `<textarea id="edit-description" maxlength="500">${description}</textarea>`;
 
     document.getElementById('btn-edit').textContent = 'Save';
     document.getElementById('btn-edit').onclick = () => saveEdit(id);
 }
 
 async function saveEdit(id) {
-    const payload = {
-        name:        document.getElementById('edit-name').value,
-        quantity:    document.getElementById('edit-quantity').value,
-        description: document.getElementById('edit-description').value,
-    };
+const sanitize = {
+  name(raw) {
+    return raw
+      .trim()                          // remove leading/trailing whitespace
+      .replace(/\s+/g, ' ')            // collapse multiple spaces to one
+      .replace(/[^a-zA-Z0-9 \-]/g, '') // strip non-alphanumeric, non-space, non-hyphen
+      .slice(0, 20);                   // enforce max length
+  },
+
+  quantity(raw) {
+    const n = Math.trunc(Number(raw)); // parse and drop any decimal
+    if (Number.isFinite(n)) return n; else return 0; // guard against NaN / Infinity
+  },
+
+  description(raw) {
+    return raw
+      .replace(/"/g, "'")              // swap double quotes for single quotes
+      .replace(/['\\;%\-\-]/g, c =>    // escape SQL-risky characters
+        ({ "'": "''", '\\': '\\\\', ';': '', '%': '' }[c] ?? c))
+      .slice(0, 500);                  // enforce max length
+  },
+};
+
+const payload = {
+  name:        sanitize.name(document.getElementById('edit-name').value),
+  quantity:    sanitize.quantity(document.getElementById('edit-quantity').value),
+  description: sanitize.description(document.getElementById('edit-description').value),
+};
+
+
 
     try {
         console.log('Attempting to patch '+ id)
@@ -70,11 +95,11 @@ function createItem() {
         <h5>New Item</h5>
         <hr>
         <p><strong>Name<span style="color: tomato;">*</span>:</strong></p>
-        <p><input id="create-name" /></p>
+        <p><input id="create-name" maxlength="20" required/></p>
         <p><strong>Quantity<span style="color: tomato;">*</span>:</strong></p>
-        <p><input id="create-quantity" type="number" value="0" /></p>
+        <p><input id="create-quantity" maxlength="10" type="number" value="0" required/></p>
         <p><strong>Description:</strong></p>
-        <p><textarea id="create-description"></textarea></p>
+        <p><textarea id="create-description" maxlength="500"></textarea></p>
         <div style="display:flex; gap:8px; margin-top:12px;">
             <button onclick="saveNewItem()">Save</button>
             <button onclick="resetDetailPanel()">Cancel</button>

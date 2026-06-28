@@ -59,11 +59,11 @@
           <form action="/login" method="post" class="authForm" novalidate>
             <div class="mb-3">
               <label class="form-label">Username</label>
-              <input name=username type="text" class="form-control" placeholder="kitty_sparkles03" required>
+              <input name=username type="text" class="form-control" placeholder="" maxlength="20" required>
             </div>
             <div class="mb-3">
               <label class="form-label">Password</label>
-              <input name=password type="password" class="form-control" placeholder="••••••••" required>
+              <input name=password type="password" class="form-control" placeholder="" maxlength="20" required>
             </div>
             <button type="submit" class="btn btn-primary w-100 mb-3">Sign In</button>
           </form>
@@ -78,11 +78,11 @@
           <form action="/api/users" method="post" class="authForm" novalidate>
             <div class="mb-3">
               <label class="form-label">Username</label>
-              <input name=new_username type="text" class="form-control" placeholder="John Doe" required>
+              <input name=new_username type="text" class="form-control" placeholder="" maxlength="20" required>
             </div>
             <div class="mb-3">
               <label class="form-label">Create Password</label>
-              <input name=new_password type="password" class="form-control" placeholder="••••••••" required>
+              <input name=new_password type="password" class="form-control" placeholder="" maxlength="20" required>
             </div>
             <button type="submit" class="btn btn-success w-100 mb-3">Create Account</button>
           </form>

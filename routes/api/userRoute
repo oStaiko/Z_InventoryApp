@@ -77,12 +77,15 @@ module.exports = function(passport) {
         db.all(
             `
             SELECT
-                id,
-                name,
-                description,
-                quantity
+                items.id,
+                items.name,
+                items.description,
+                items.quantity
+                users.username
             FROM items
-            WHERE owner_id = ?
+            JOIN users
+                ON users.id = items.owner_id
+            WHERE items.owner_id = ?
             `,
             [req.params.id],
             (err, row) => {
@@ -101,6 +104,13 @@ module.exports = function(passport) {
         const { new_username, new_password } = req.body;
         console.log("POST /users/");
         console.log("Attempting to create new user => " + new_username + ' : ' + new_password)
+        // Input validation
+        if (!/^[a-zA-Z0-9_~-]+$/.test(new_username))
+            return res.status(400).send("Username contains illegal characters.");
+        else if (/^[A-Za-z\d@$!%*?&].$/.test(new_password))
+            return res.status(400).send("Password contains illegal characters.");
+        else if (/^.{4,20}$/.test(new_password))
+            return res.status(400).send("Password must be between 4 and 20 characters.");
         try {
             const passwordHash = await bcrypt.hash(new_password, 10);
             db.run(
