@@ -1,0 +1,71 @@
+<%- include('head') %>
+<%- include('navbar') %>
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1>My Items</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Inventory Cards -->
+        <div class="col-lg-9">
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                <% data.forEach((item) => { %>
+                <div class="col">
+                    <div
+                        class="card h-100 inventory-card"
+                        style="cursor:pointer"
+                        data-id="<%= item.id %>"
+                        data-name="<%= item.name %>"
+                        data-description="<%= item.description || '' %>"
+                        data-quantity="<%= item.quantity %>"
+                        data-username="<%= item.username %>"
+                        onclick="showDetails(this)"
+                    >
+                        <h5 class="card-header"><%= item.name %></h5>
+
+                        <div class="card-body">
+                            <p class="card-text">
+                                <%= item.description == null
+                                    ? ''
+                                    : (item.description.length > 100
+                                        ? item.description.slice(0, 100) + '...'
+                                        : item.description) %>
+                            </p>
+                        </div>
+
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item <%= item.quantity==0 ? 'text-bg-warning' : 'text-bg-success' %>">
+                                Quantity: <%= item.quantity %>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+        </div>
+
+        <!-- Detail Panel -->
+        <div class="col-lg-3">
+            <button onclick="createItem()"> Create New Item </button>
+            <div class="card sticky-top">
+                <div class="card-header text-bg-info">
+                    Item Details
+                </div>
+
+                <div class="card-body" id="detailPanel">
+                    <p class="text-muted">
+                        Click on a card for more information.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="./inventory.js"></script>
+
+</body>
+</html>

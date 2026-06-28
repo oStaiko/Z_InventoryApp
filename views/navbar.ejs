@@ -1,0 +1,99 @@
+<%# NavBar and Login/Signup Modals are modified Bootstrap examples %>
+<!-- Nav Bar -->
+<nav class="navbar bg-body-tertiary">
+    <div class="container-fluid flex-nowrap">
+        <div class="d-flex w-100 align-items-center">
+
+            <!-- Left - Logo -->
+            <a href="/" class="navbar-brand d-flex me-auto align-items-center">
+                <img src="/logo.png" width="64" height="64" alt="Company Logo">
+                <span class="ms-2">IMS+</span>
+            </a>
+            
+            <!-- Center - Tabs -->
+            <ul class="navbar-nav flex-row fs-1 mx-auto">
+                <% [['about','About'], ['api','API Guide'], ['directory','Global Directory'], ['inventory','My Inventory']].forEach(([itemPath, itemName]) => { %>
+                <% if (itemPath == 'inventory' && !user) { return; } %>
+                <li class="nav-item px-lg-5 px-2">
+                    <a href="/<%= itemPath %>" class="<%= path === itemPath ? 'nav-link active' : 'nav-link' %>"
+                    <%= path === itemPath ? 'aria-current="page"' : '' %>>
+                    <%= itemName %>
+                    </a>
+                </li>
+                <% }) %>
+            </ul>
+
+            <!-- Right - Login -->
+            <div class="navbar-nav ms-auto align-items-center fs-1">
+                <% if (user) { %>
+                <form action="/logout" metod="post">
+                    <button type="submit" class="btn nav-link">
+                        Log Out
+                        <img src="/logout.png" width="64" height="64" class="mx-2" alt="Logout Image">
+                    </button>
+                </form>
+                <% } else { %>
+                <button type="button" class="btn nav-link" data-bs-toggle="modal" data-bs-target="#authModal">
+                    Log In
+                    <img src="/unlock.png" width="64" height="64" class="mx-2" alt="Login Image">
+                </button>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Login Modal -->
+<div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="authModalTitle">Account Login</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body">
+        
+        <!-- LOGIN VIEW -->
+        <div id="loginView">
+          <form action="/login" method="post" class="authForm" novalidate>
+            <div class="mb-3">
+              <label class="form-label">Username</label>
+              <input name=username type="text" class="form-control" placeholder="kitty_sparkles03" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input name=password type="password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mb-3">Sign In</button>
+          </form>
+          <div class="text-center">
+            <span class="text-muted">Don't have an account?</span>
+            <button type="button" class="btn btn-link p-0 ms-1" id="switchToSignUp">Create one</button>
+          </div>
+        </div>
+
+        <!-- SIGN UP VIEW -->
+        <div id="signUpView" class="d-none">
+          <form action="/api/users" method="post" class="authForm" novalidate>
+            <div class="mb-3">
+              <label class="form-label">Username</label>
+              <input name=new_username type="text" class="form-control" placeholder="John Doe" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Create Password</label>
+              <input name=new_password type="password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-success w-100 mb-3">Create Account</button>
+          </form>
+          <div class="text-center">
+            <span class="text-muted">Already have an account?</span>
+            <button type="button" class="btn btn-link p-0 ms-1" id="switchToLogin">Sign In</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="./modal.js" defer></script>
+<!-- End NavBar -->

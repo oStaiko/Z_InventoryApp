@@ -1,0 +1,90 @@
+<%- include('head') %>
+<%- include('navbar') %>
+
+<br>
+<div class="d-flex flex-column align-items-center">
+    <br><h1>API Guide</h1><br><br>
+
+    <h4>
+        Here's a quick guide on how to use our public API!<br><br><br>
+
+        It can be used to retrieve data:<br><br>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Path</th>
+                    <th scope="col">Method</th>
+                    <th scope="col">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>/api/items</td>
+                    <td>GET</td>
+                    <td>A list of all item IDs, Names, and a 100 character description</td>
+                </tr>
+                <tr>
+                    <td>/api/item/:id</td>
+                    <td>GET</td>
+                    <td>All information about a single item</td>
+                </tr>
+                <tr>
+                    <td>/api/users</td>
+                    <td>GET</td>
+                    <td>A list of all registered user IDs and Names</td>
+                </tr>
+                <tr>
+                    <td>/api/user/:id</td>
+                    <td>GET</td>
+                    <td>All information about a single user</td>
+                </tr>
+                <tr>
+                    <td>/api/user/:id/items</td>
+                    <td>GET</td>
+                    <td>A list of all items belonging to the user</td>
+                </tr>
+            </tbody>
+        </table><br>
+
+        And also used to submit data (if you're logged in):<br><br>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Path</th>
+                    <th scope="col">Method</th>
+                    <th scope="col">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>/api/items</td>
+                    <td>POST</td>
+                    <td>Creates a new item</td>
+                </tr>
+                <tr>
+                    <td>/api/item/:id</td>
+                    <td>PATCH</td>
+                    <td>Updates an item</td>
+                </tr>
+                <tr>
+                    <td>/api/item/:id</td>
+                    <td>DELETE</td>
+                    <td>Deletes an item</td>
+                </tr>
+                <tr>
+                    <td>/api/users</td>
+                    <td>POST</td>
+                    <td>Creates a new user</td>
+                </tr>
+                <tr>
+                    <td>/api/user/:id</td>
+                    <td>DELETE</td>
+                    <td>Deletes a user</td>
+                </tr>
+            </tbody>
+        </table><br><br><br>
+
+        API is not currently safe for production environment; All pathways exposed for testing/scoring.
+    </h4>
+</div>
+</body>

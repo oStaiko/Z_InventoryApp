@@ -1,0 +1,201 @@
+const express = require('express');
+const db = require('../../database');
+
+
+module.exports = function(passport) {
+    const router = express.Router();
+
+    function requireLogin(req, res, next) {
+        if (!req.isAuthenticated())
+            res.sendStatus(401);
+        else
+            next();
+    }
+
+    function requireOwnership(req, res, next)
+    {
+            db.get(
+            `SELECT owner_id FROM items WHERE id = ?`,
+            [req.params.id],
+            (err, row) => {
+                if (err)
+                    res.status(500).json(err);
+                else if (!row)
+                    res.sendStatus(404);
+                else if (row.owner_id != req.session.passport.user)
+                    res.sendStatus(403);
+                else
+                    next();
+            }
+        );
+    }
+
+    // GET /api/items
+    // Returns all items
+    router.get('/', (req, res) => {
+
+        db.all(
+            `
+            SELECT
+                items.id,
+                items.name,
+                items.description,
+                items.quantity,
+                users.username
+            FROM items
+            JOIN users
+                ON users.id = items.owner_id
+            `,
+            [],
+            (err, rows) => {
+                if (err)
+                    res.status(500).json(err);
+                else
+                    res.json(rows);
+            }
+        );
+    });
+
+    // GET /api/items/:id
+    // Returns all information on one item
+    router.get('/:id', (req, res) => {
+
+        console.log("GET /api/items/"+req.params.id)
+        db.get(
+            `
+            SELECT
+                items.id,
+                items.name,
+                items.description,
+                items.quantity,
+                items.owner_id,
+                users.username
+            FROM items
+            JOIN users
+                ON users.id = items.owner_id
+            WHERE items.id = ?
+            `,
+            [req.params.id],
+            (err, row) => {
+                if (err)
+                    res.status(500).json(err);
+                else if (!row)
+                    res.sendStatus(404);
+                else
+                    res.json(row);
+            }
+        );
+    });
+
+    // POST /api/items/
+    // Creates a new item belonging to the current logged-in user
+    router.post('/', requireLogin, (req, res) => {
+
+        console.log("POST /api/items/")
+        const { name, description, quantity } = req.body;
+
+        db.run(
+            `
+            INSERT INTO items
+            (
+                name,
+                description,
+                quantity,
+                owner_id
+            )
+            VALUES (?, ?, ?, ?)
+            `,
+            [
+                name,
+                description,
+                quantity,
+                req.session.passport.user
+            ],
+            (err) => {
+                if (err)
+                    res.status(400).json({ error: err.message });
+                else
+                    res.status(201).json({ id: this.lastID });
+            }
+        );
+    });
+
+    // PATCH /api/items/:id
+    // Updates an item belonging to the current logged-in user
+    router.patch('/:id', requireLogin, requireOwnership, (req, res) => {
+        console.log("PATCH /api/items/"+req.params.id)
+        const fields = [];
+        const values = [];
+
+        const allowedFields = [
+            'name',
+            'description',
+            'quantity'
+        ];
+
+        for (const field of allowedFields)
+            if (req.body[field] !== undefined) {
+                fields.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+
+        if (fields.length === 0)
+            return res.status(400).json({
+                error: 'No fields supplied'
+            });
+
+        values.push(req.params.id);
+        db.run(
+            `
+            UPDATE items
+            SET ${fields.join(', ')}
+            WHERE id = ?
+            `,
+            values,
+            function(err) {
+                if (err)
+                    return res.status(500).json(err);
+                else if (this.changes === 0)
+                    return res.sendStatus(404);
+                else
+                    res.sendStatus(204);
+            }
+        );
+    });
+
+    // DELETE /api/items/:id
+    // Deletes an item belonging to the current logged-in user
+    router.delete('/:id', /*requireLogin, requireOwnership,*/ (req, res) => {
+
+        console.log("DELETE /api/items/"+req.params.id)
+        db.run(
+            `DELETE FROM items WHERE id = ?`,
+            [req.params.id],
+            (err) => {
+
+                if (err)
+                    return res.status(500).json(err);
+                else if (this.changes === 0)
+                    return res.sendStatus(404);
+                else
+                    res.sendStatus(204);
+            }
+        );
+    });
+
+    return router;
+}
+
+/*
+CREATE TABLE items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    owner_id INTEGER NOT NULL,
+
+    FOREIGN KEY (owner_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
+*/

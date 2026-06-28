@@ -1,0 +1,176 @@
+const express = require('express');
+const bcrypt = require('bcrypt');
+const db = require('../../database');
+
+module.exports = function(passport) {
+    const router = express.Router();
+
+    function requireLogin(req, res, next) {
+        if (!req.isAuthenticated())
+            res.sendStatus(401);
+        else
+            next();
+    }
+
+    function requireOwnership(req, res, next)
+    {
+            db.get(
+            `SELECT owner_id FROM items WHERE id = ?`,
+            [req.params.id],
+            (err, row) => {
+                if (err)
+                    res.status(500).json(err);
+                else if (!row)
+                    res.sendStatus(404);
+                else if (row.owner_id != req.session.passport.user)
+                    res.sendStatus(403);
+                else
+                    next();
+            }
+        );
+    }
+
+    // GET /api/users
+    // Returns JSON for all IDs and Usernames
+    router.get('/', (req, res) => {
+        console.log("GET /users/");
+        db.all(
+            `SELECT id, username FROM users`,
+            [],
+            (err, rows) => {
+
+                if (err)
+                    return res.status(500).json(err);
+                else
+                    res.json(rows);
+        });
+    });
+
+    // GET /api/users/:id
+    // Returns ID and Username associated with ID
+    router.get('/:id', (req, res) => {
+        console.log("GET /users/"+req.params.id);
+        db.get(
+            `
+            SELECT
+                id,
+                username
+            FROM users
+            WHERE id = ?
+            `,
+            [req.params.id],
+            (err, row) => {
+
+                if (err)
+                    res.status(500).send(err.message);
+                else if (!row)
+                    res.sendStatus(404);
+                else
+                    res.json(row);
+        });
+    });
+
+    // GET /api/users/:id/items
+    // Returns all items belonging to user
+    router.get('/:id/items', (req, res) => {
+        console.log("GET /users/"+req.params.id+"/items");
+        db.all(
+            `
+            SELECT
+                id,
+                name,
+                description,
+                quantity
+            FROM items
+            WHERE owner_id = ?
+            `,
+            [req.params.id],
+            (err, row) => {
+                if (err)
+                    res.status(500).send(err.message);
+                else if (!row)
+                    res.sendStatus(404);
+                else
+                    res.json(row);
+        });
+    });
+
+    // POST /api/users
+    // Create a new user
+    router.post('/', async (req, res) => {
+        const { new_username, new_password } = req.body;
+        console.log("POST /users/");
+        console.log("Attempting to create new user => " + new_username + ' : ' + new_password)
+        try {
+            const passwordHash = await bcrypt.hash(new_password, 10);
+            db.run(
+                `
+                INSERT INTO users
+                (username, password_hash)
+                VALUES (?, ?)
+                `,
+                [new_username, passwordHash],
+                function(err) {
+                    if (err)
+                    {
+                        if (err.message == 'SQLITE_CONSTRAINT: UNIQUE constraint failed: users.username')
+                        {
+                            console.log("Error creating user: Username '" + new_username + "' already exists.");
+                            res.status(400).send("Username already exists.");
+                        }
+                        else
+                        {
+                            console.log("Error creating user: ", err)
+                            res.status(400).send(err.message);
+                        }
+                    }
+                    else
+                    {
+                        console.log("Created new user: ", new_username)
+
+                        // Log in user
+                        db.get('SELECT * FROM users WHERE id = ?', [this.lastID], (err, user) => {
+                            if (err) return next(err);
+                            req.login(user, (err) => {
+                                if (err) return next(err);
+                                res.redirect('/inventory');
+                            });
+                        });
+                    }
+        });
+        } catch {
+            console.log("Generic error creating user: ", new_username);
+            res.redirect('/');
+        }
+    });
+
+    // DELETE /api/users/:id
+    // Deletes the specified user, and all items associated with them
+    router.delete('/:id', requireLogin, requireOwnership, (req, res) => {
+        console.log("DELETE /users/"+req.params.id);
+        // Delete User
+        db.run(
+            `DELETE FROM users WHERE id = ?`,
+            [req.params.id],
+            function(err) {
+
+                if (err)
+                    res.status(500).json(err);
+                else if (this.changes === 0)
+                    res.sendStatus(404);
+                else
+                    res.sendStatus(204);
+        });
+    });
+
+
+    return router;
+}
+
+/*
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOCASE NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL
+);
+*/

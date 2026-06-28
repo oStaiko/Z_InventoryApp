@@ -1,0 +1,22 @@
+<%- include('head') %>
+<%- include('navbar') %>
+
+<br>
+<div class="d-flex flex-column align-items-center">
+    <br><br><br>
+    <img src="./logo.png">
+    <h2>Inventory Management System +</h2>
+    <br><br><br><br><br><br>
+    <p>
+        <h3>
+            <% if (user) { %>
+            Welcome <span class="fw-bold"><%= user.username %></span>!
+             Please click on the "My Inventory" tab to begin managing your inventory.
+            <% } else { %>
+            Welcome to our website!
+             Please log in using the top right button, or click on the "Global Directory" tab to view public inventories.
+            <% } %>
+        </h3>
+    </p>
+</div>
+</body>

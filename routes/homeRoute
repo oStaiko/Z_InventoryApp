@@ -1,0 +1,56 @@
+const express = require('express');
+
+module.exports = function(passport) {
+    const router = express.Router();
+
+    router.post('/login', 
+        passport.authenticate('local', {
+            successRedirect: '/inventory',
+            failureRedirect: '/'
+    }))
+
+    router.use('/logout',(req,res)=>{
+        if (req.user)
+            console.log("Logging out " + req.user.username)
+        req.logout((err) => {
+            if (err)
+                next(err);
+            else
+                res.redirect('/');
+        });
+    })
+
+    router.get('/admin',(req,res)=>{
+        res.redirect('google.com/search?q=How+can+I+be+a+more+creative+hacker');
+    })
+
+    router.get('/about',(req, res)=>{
+        res.render('about', {path:"about"});
+    })
+
+    router.get('/api',(req, res)=>{
+        res.render('api', {path:"api"});
+    })
+
+    router.get('/directory', async (req, res)=>{
+        const response = await fetch("http://localhost:8080/api/items");
+        const data = await response.json();
+        data.sort((a, b) => a.id - b.id);
+        res.render('directory', {path:"directory", data: data});
+    })
+
+    router.get('/inventory', async (req, res)=>{
+        if (!req.isAuthenticated())
+            return res.redirect('/directory');
+        const response = await fetch("http://localhost:8080/api/users/"+req.session.passport.user+"/items");
+        const data = await response.json();
+        //data.sort((a, b) => a.id - b.id);
+        res.render('inventory', {path:"inventory", data: data});
+    })
+
+    router.get('/',(req, res)=>{
+        res.render('index', {path:""});
+    });
+
+    return router;
+}
