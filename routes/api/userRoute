@@ -80,7 +80,7 @@ module.exports = function(passport) {
                 items.id,
                 items.name,
                 items.description,
-                items.quantity
+                items.quantity,
                 users.username
             FROM items
             JOIN users
@@ -90,7 +90,10 @@ module.exports = function(passport) {
             [req.params.id],
             (err, row) => {
                 if (err)
+                {
+                    console.log("DB ERROR: "+err.message)
                     res.status(500).send(err.message);
+                }
                 else if (!row)
                     res.sendStatus(404);
                 else
