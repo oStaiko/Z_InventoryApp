@@ -35,7 +35,7 @@ module.exports = function(passport, HOST="localhost", PORT=3000) {
     })
 
     router.get('/admin',(req,res)=>{ // Discount honeypot
-        writeLog('WARNING', `Atempt made to get /admin by    IP:${req.ip}`)
+        writeLog('WARNING', `Atempt made to get /admin by    IP:${req.ip}`, "alerts")
         res.redirect('google.com/search?q=How+can+I+be+a+more+creative+hacker');
     })
 

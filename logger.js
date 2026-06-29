@@ -18,7 +18,7 @@ function userInfo (req)
         else
             return req.ip + ' (Unable to grab session)'
     }
-    else   
+    else
         return req.ip + ' (Guest)'
 }
 
@@ -26,8 +26,9 @@ function userInfo (req)
  * Writes a formatted log entry to /logs/log.txt
  * @param {'INFO' | 'WARN' | 'ERROR' | 'DEBUG'} type - The log level
  * @param {string} message - The message to log
+ * @param {'server' | 'traffic' | 'alerts'} log - The log to output to
  */
-function writeLog(type, message) {
+function writeLog(type, message, log="server") {
     const now = new Date();
 
     const timestamp = [
@@ -40,8 +41,24 @@ function writeLog(type, message) {
         String(now.getSeconds()).padStart(2, '0'),
     ].join(':');
 
-    const line = `[${timestamp}] ${type}: ${message}\n`;
-    const logPath = path.join(`${__dirname}/logs`, 'log.txt');
+    let logPath="", line="";
+    if (log=="traffic")
+    {
+        logPath = path.join(`${__dirname}/logs`, 'traffic.log');
+        line = `[${timestamp}] ${type}: ${message}\n`;
+    }
+    else if (log=="alerts")
+    {
+        logPath = path.join(`${__dirname}/logs`, 'alerts.log');
+        line = `[${timestamp}] ${type}: ${message}\n`;
+    }
+    else if (log=="server")
+    {
+        logPath = path.join(`${__dirname}/logs`, 'server.log');
+        line = `[${timestamp}] ${type}: ${message}\n`;
+    }
+    else
+        return writeLog('ERROR', `Log type does not exist: '${log}'. Failed message: '${message}'`)
     
     console.log(line);
 

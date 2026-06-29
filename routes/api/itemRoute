@@ -101,12 +101,40 @@ module.exports = function(passport) {
         );
     });
 
+    // Makes API POST/PATCH requests safer by stopping injection attempts
+    function sanitize(input)
+    {
+        if (typeof input !== "string")
+            input = String(input);
+
+        return input
+            // HTML Re-encoding
+            .replace(/&/g, "&amp;") 
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            // SQL escape chars
+            .replace(/'/g, "") // &#x27; but I gave up on making this work
+            .replace(/\x00/g, "")
+            .replace(/{/g, "")
+            .replace(/}/g, "")
+            .replace(/%/g, "")
+            .replace(/;/g, "")
+            // General cleanup
+            .trim()
+            .replace(/\s+/g, ' ')
+            .slice(0, 500);
+    }
+
     // POST /api/items/
     // Creates a new item belonging to the current logged-in user
     router.post('/', requireLogin, (req, res) => {
 
         const { name, description, quantity } = req.body;
         writeLog('INFO', `POST /api/items/   for ${quantity} of item: ${name} (${description.slice(0, 20)})   by ${userInfo(req)}`);
+
+        if(sanitize(name).slice(0, 20) == "")
+            return res.status(400).json({ error: "Name field is required"});
 
         db.run(
             `
@@ -120,16 +148,16 @@ module.exports = function(passport) {
             VALUES (?, ?, ?, ?)
             `,
             [
-                name,
-                description,
-                quantity,
+                sanitize(name).slice(0, 20),
+                sanitize(description).slice(0, 500),
+                sanitize(quantity),
                 req.session.passport.user
             ],
             (err) => {
                 if (err)
                 {
                     writeLog('ERROR', `DB Error: ${err.message}`);
-                    res.status(500).send(err.message);
+                    res.status(500).json({error: "Unable to accept this item"});
                 }
                 else
                     res.status(201).json({ id: this.lastID });
@@ -153,7 +181,10 @@ module.exports = function(passport) {
         for (const field of allowedFields)
             if (req.body[field] !== undefined) {
                 fields.push(`${field} = ?`);
-                values.push(req.body[field]);
+                if (field == "name")
+                    values.push(sanitize(req.body[field]).slice(0,20));
+                else
+                    values.push(sanitize(req.body[field]));
             }
 
         if (fields.length === 0)
@@ -173,12 +204,12 @@ module.exports = function(passport) {
                 if (err)
                 {
                     writeLog('ERROR', `DB Error: ${err.message}`);
-                    res.status(500).send(err.message);
+                    res.status(500).json({error: ""});
                 }
                 else if (this.changes === 0)
                 {
                     writeLog('WARNING',`Requested item does not exist.`)
-                    res.sendStatus(404);
+                    res.sendStatus(404).json({error: "Item does not exist"});
                 }
                 else
                 {
@@ -201,12 +232,12 @@ module.exports = function(passport) {
                 if (err)
                 {
                     writeLog('ERROR', `DB Error: ${err.message}`);
-                    res.status(500).send(err.message);
+                    res.status(500);
                 }
                 else if (this.changes === 0)
                 {
                     writeLog('WARNING',`Requested item does not exist.`)
-                    res.sendStatus(404);
+                    res.sendStatus(404).json({error: "Item does not exist"});
                 }
                 else
                 {
